@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "474755633352",
+    "project_id": "simbank-e2799",
+    "storage_bucket": "simbank-e2799.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:474755633352:android:f30de81811913f444395fd",
+        "android_client_info": {
+          "package_name": "com.example.simbank"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFqWEqsQdkUkVwULHX5ICTJV9IIYs0p4Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

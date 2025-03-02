@@ -1,9 +1,14 @@
+package com.example.simbank.viewmodel
+
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.simbank.viewmodel.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 
+/**
+ * ViewModel for handling forgot password authentication.
+ */
 class ForgotPassAuthViewModel : ViewModel() {
 
     private val firebaseAuth = FirebaseAuth.getInstance()
@@ -12,6 +17,11 @@ class ForgotPassAuthViewModel : ViewModel() {
     // Expose reset password state to the UI
     val authResultState = mutableStateOf<AuthResult>(AuthResult.Idle)
 
+    /**
+     * Initiates the password reset process for the given email.
+     *
+     * @param email The email address to send the reset link to.
+     */
     fun resetPassword(email: String) {
         Log.d(TAG, "resetPassword called with email: $email")
 

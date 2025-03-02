@@ -4,6 +4,8 @@ plugins {
     id("com.google.gms.google-services")
     id("org.jetbrains.compose") version "1.8.0-alpha03"
     id("org.jetbrains.kotlin.plugin.compose") version "2.1.20-RC"
+    id("kotlin-kapt")
+    id("com.google.dagger.hilt.android")
 }
 
 repositories {
@@ -65,6 +67,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.google.firebase.auth.ktx)
+    implementation(libs.androidx.espresso.core)
+    implementation(libs.androidx.transition)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -82,4 +86,11 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore.ktx)
+
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
 }

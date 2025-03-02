@@ -1,6 +1,5 @@
 package com.example.simbank.ui
 
-import ForgotPassAuthViewModel
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -13,19 +12,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.simbank.navigation.Screen
 import com.example.simbank.viewmodel.AuthResult
+import com.example.simbank.viewmodel.ForgotPassAuthViewModel
 
+/**
+ * Composable function for the Forgot Password Screen.
+ *
+ * @param navController The NavController for navigation.
+ * @param forgotPassAuthViewModel The ViewModel for handling forgot password authentication.
+ */
 @Composable
 fun ForgotPasswordScreen(
     navController: NavController,
-    forgotPassAuthViewModel: ForgotPassAuthViewModel = viewModel()) {
+    forgotPassAuthViewModel: ForgotPassAuthViewModel = viewModel()
+) {
     var email by remember { mutableStateOf("") }
-
     val authResultState = forgotPassAuthViewModel.authResultState.value
     val context = LocalContext.current
     val TAG = "ForgotPasswordScreen"
 
+    // Handle side effects from authResultState.
     when (authResultState) {
         is AuthResult.Success -> {
             LaunchedEffect(Unit) {
@@ -36,7 +44,6 @@ fun ForgotPasswordScreen(
                 }
             }
         }
-
         is AuthResult.Error -> {
             LaunchedEffect(authResultState) {
                 Log.e(TAG, "Reset error: ${authResultState.message}")
@@ -50,37 +57,70 @@ fun ForgotPasswordScreen(
             }
         }
         AuthResult.Idle -> {
-            Log.d(TAG, "Reset idle.")
-            // Do nothing
+            // Do nothing.
         }
     }
 
+    // Call the stateless content.
+    ForgotPasswordContent(
+        email = email,
+        onEmailChange = { email = it },
+        onResetClick = { forgotPassAuthViewModel.resetPassword(email) },
+        onBackClick = { navController.navigate(Screen.Login.route) }
+    )
+}
+
+/**
+ * Composable function for displaying the forgot password content.
+ *
+ * @param email The email address entered by the user.
+ * @param onEmailChange Callback when the email address changes.
+ * @param onResetClick Callback when the reset button is clicked.
+ * @param onBackClick Callback when the back button is clicked.
+ */
+@Composable
+fun ForgotPasswordContent(
+    email: String,
+    onEmailChange: (String) -> Unit,
+    onResetClick: () -> Unit,
+    onBackClick: () -> Unit
+) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
         Text(text = "Forgot Password?", style = MaterialTheme.typography.h5)
         Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
+        OutlinedTextField(
+            value = email,
+            onValueChange = onEmailChange,
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {
-            Log.d(TAG, "Send Reset Link clicked with email: $email")
-            forgotPassAuthViewModel.resetPassword(email)
-        }) {
+        Button(onClick = onResetClick) {
             Text(text = "Send Reset Link")
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Back to Login",
-            modifier = Modifier.clickable { navController.navigate(Screen.Login.route) },
+            modifier = Modifier.clickable { onBackClick() },
             style = MaterialTheme.typography.body1
         )
     }
 }
 
+/**
+ * Preview function for ForgotPasswordContent composable.
+ */
 @Preview(showBackground = true)
 @Composable
-fun PreviewForgotPasswordScreen() {
-    val context = LocalContext.current
-    ForgotPasswordScreen(navController = NavController(context))
+fun PreviewForgotPasswordContent() {
+    ForgotPasswordContent(
+        email = "test@example.com",
+        onEmailChange = {},
+        onResetClick = {},
+        onBackClick = {}
+    )
 }

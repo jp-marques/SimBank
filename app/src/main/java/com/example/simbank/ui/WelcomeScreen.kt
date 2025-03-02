@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.simbank.navigation.Screen
 
 @Composable
@@ -26,6 +27,5 @@ fun WelcomeScreen(navController: NavController) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewWelcomeScreen() {
-    val context = LocalContext.current
-    WelcomeScreen(navController = NavController(context))
+    WelcomeScreen(navController = rememberNavController())
 }

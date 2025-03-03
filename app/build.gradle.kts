@@ -16,7 +16,7 @@ repositories {
 
 android {
     namespace = "com.example.simbank"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.simbank"
@@ -42,6 +42,10 @@ android {
     }
     kotlinOptions {
         jvmTarget = "1.8"
+        allWarningsAsErrors = false
+        freeCompilerArgs += (
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
+        )
     }
     buildFeatures {
         compose = true
@@ -92,5 +96,6 @@ dependencies {
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.material3)
 
 }

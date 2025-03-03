@@ -32,3 +32,8 @@ data class Transaction(
     val type: String = "", // deposit or payment
     val timestamp: Long = System.currentTimeMillis()
 )
+
+data class TransactionResult(
+    val success: Boolean,
+    val errorMessage: String? = null
+)

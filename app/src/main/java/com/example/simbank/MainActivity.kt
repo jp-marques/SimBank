@@ -1,5 +1,6 @@
 package com.example.simbank
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,6 +14,7 @@ import com.example.simbank.theme.SimBankTheme
 import com.example.simbank.viewmodel.LoginAuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,15 +23,31 @@ class MainActivity : ComponentActivity() {
         setContent {
             SimBankTheme {
                 val navController = rememberNavController()
+                val sharedPref = this.getPreferences(Context.MODE_PRIVATE)
                 val loginAuthViewModel: LoginAuthViewModel = viewModel()
 
-                LaunchedEffect(Unit) {
-                    if (!loginAuthViewModel.checkAuthState()) {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(0) { inclusive = true }
+                val isFirstLaunch = sharedPref.getBoolean("isFirstLaunch", true)
+                if (isFirstLaunch) {
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                    sharedPref.edit().putBoolean("isFirstLaunch", false).apply()
+                } else {
+                    LaunchedEffect(Unit) {
+                        if (!loginAuthViewModel.checkAuthState()) {
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        } else {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
                         }
                     }
+
                 }
+
+
 
                 AppNavigation(navController)
             }

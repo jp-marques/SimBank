@@ -6,97 +6,111 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.simbank.datamodels.UserAccount
 import com.example.simbank.repository.UserRepository
-import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.FirebaseException
+import com.google.firebase.auth.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
+import kotlin.coroutines.cancellation.CancellationException
 
-/**
- * ViewModel for handling login authentication.
- */
 class LoginAuthViewModel : ViewModel() {
-
     private val firebaseAuth = FirebaseAuth.getInstance()
     private val userRepository = UserRepository()
-    private val TAG = "com.example.simbank.viewmodel.LoginAuthViewModel"
+    private val TAG = "LoginAuthViewModel"
 
-    // Expose login state to the UI
+    // State holder for authentication results
     val authResultState = mutableStateOf<AuthResult>(AuthResult.Idle)
 
-    /**
-     * Initiates the login process for the given email and password.
-     *
-     * @param email The email address of the user.
-     * @param password The password of the user.
-     */
-    fun loginUser(email: String, password: String) {
-        Log.d(TAG, "loginUser called with email: $email")
+    // Timeout duration for Firebase operations (in milliseconds)
+    private val FIREBASE_TIMEOUT = 10000L // 10 seconds
 
-        // Basic validation
+    fun loginUser(email: String, password: String) {
+        // Input validation
         if (email.isBlank() || password.isBlank()) {
-            Log.e(TAG, "Validation failed: Email and password are required.")
             authResultState.value = AuthResult.Error("Email and password are required.")
             return
         }
 
-        // Show loading
+        // Set loading state
         authResultState.value = AuthResult.Loading
-        Log.d(TAG, "Validation passed, starting Firebase login.")
 
-        // Firebase signInWithEmailAndPassword
-        firebaseAuth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val user = firebaseAuth.currentUser
-                    if(user != null) {
-                        viewModelScope.launch {
-                            Log.d(TAG, "Retrieving user account from repository for user ID: ${user.uid}")
-                            val existingAccount = userRepository.getUserAccountOnce(user.uid)
-                            Log.d(TAG, "Existing account retrieved: $existingAccount")
+        viewModelScope.launch {
+            try {
+                // Attempt Firebase authentication with timeout
+                withTimeout(FIREBASE_TIMEOUT) {
+                    val authResult = firebaseAuth.signInWithEmailAndPassword(email, password).await()
 
-                            val updatedAccount = if (existingAccount != null) {
-                                Log.d(TAG, "Updating existing account for user ID: ${user.uid}")
-                                existingAccount.copy(
-                                    fullName = user.displayName ?: "",
-                                    email = email)
-                            } else {
-                                Log.d(TAG, "Creating new account for user ID: ${user.uid}")
-                                UserAccount(
-                                    uid = user.uid,
-                                    fullName = user.displayName ?: "",
-                                    email = email)
-                            }
-                            Log.d(TAG, "Account to be created/updated: $updatedAccount")
-                            userRepository.createOrUpdateUserAccount(updatedAccount)
+                    // Handle successful authentication
+                    val user = authResult.user
+                    if (user != null) {
+                        try {
+                            updateUserAccount(user, email)
                             authResultState.value = AuthResult.Success
+                        } catch (e: Exception) {
+                            // Handle repository operation failure
+                            handleError("Failed to update user data: ${e.localizedMessage}")
+                            logout() // Cleanup on failure
                         }
-                        Log.d(TAG, "Login successful for email: $email and user ID: ${user.uid}")
+                    } else {
+                        handleError("User authentication failed")
                     }
-                } else {
-                    // Login failed
-                    val errorMsg = task.exception?.localizedMessage ?: "Login failed."
-                    Log.e(TAG, "Login failed for email: $email, error: $errorMsg")
-                    authResultState.value = AuthResult.Error(errorMsg)
                 }
+            } catch (e: Exception) {
+                // Handle specific Firebase exceptions
+                val errorMessage = when (e) {
+                    is FirebaseAuthInvalidCredentialsException -> "Invalid email or password"
+                    is FirebaseAuthInvalidUserException -> "Account doesn't exist"
+                    is FirebaseException -> "Network error. Please check your connection"
+                    is CancellationException -> "Operation timed out"
+                    else -> e.localizedMessage ?: "Authentication failed"
+                }
+                handleError(errorMessage)
             }
-    }
-
-    /**
-     * Logs out the current user.
-     */
-    fun logout() {
-        try{
-            FirebaseAuth.getInstance().signOut()
-            authResultState.value = AuthResult.Idle
-        } catch (e: Exception) {
-            Log.e(TAG, "Error during logout: ${e.message}")
         }
     }
 
-    /**
-     * Checks if a user is currently authenticated.
-     *
-     * @return True if a user is authenticated, false otherwise.
-     */
+    // Helper function to update user account in repository
+    private suspend fun updateUserAccount(user: FirebaseUser, email: String) {
+        val existingAccount = userRepository.getUserAccountOnce(user.uid)
+
+        val updatedAccount = existingAccount?.copy(
+            fullName = user.displayName ?: "",
+            email = email
+        ) ?: UserAccount(
+            uid = user.uid,
+            fullName = user.displayName ?: "",
+            email = email
+        )
+
+        userRepository.createOrUpdateUserAccount(updatedAccount)
+    }
+
+    // Centralized error handling
+    private fun handleError(message: String) {
+        Log.e(TAG, message)
+        authResultState.value = AuthResult.Error(message)
+    }
+
+    fun logout() {
+        try {
+            firebaseAuth.signOut()
+            authResultState.value = AuthResult.Idle
+        } catch (e: Exception) {
+            handleError("Logout failed: ${e.localizedMessage}")
+        }
+    }
+
+    // Enhanced auth state check with token validation
     fun checkAuthState(): Boolean {
-        return FirebaseAuth.getInstance().currentUser != null
+        return try {
+            val user = firebaseAuth.currentUser
+            // Check if user exists and token is valid
+            user?.let {
+                it.reload().isSuccessful && !it.isAnonymous
+            } ?: false
+        } catch (e: Exception) {
+            handleError("Auth state check failed: ${e.localizedMessage}")
+            false
+        }
     }
 }

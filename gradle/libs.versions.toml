@@ -16,6 +16,7 @@ composeBom = "2025.02.00"
 lifecycleViewmodelKtx = "2.8.7"
 material = "1.7.8"
 material3 = "1.3.1"
+materialIconsExtended = "1.7.8"
 navigationFragmentKtx = "2.8.8"
 securityCrypto = "1.1.0-alpha06"
 ui = "1.7.8"
@@ -51,6 +52,7 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }

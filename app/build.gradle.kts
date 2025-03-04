@@ -98,4 +98,6 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.material3)
 
+    implementation(libs.material.icons.extended)
+
 }

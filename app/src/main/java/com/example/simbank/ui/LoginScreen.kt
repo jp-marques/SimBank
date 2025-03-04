@@ -4,10 +4,20 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -98,29 +108,90 @@ fun LoginContent(
     onRegisterClick: () -> Unit,
     authResultState: AuthResult
 ) {
+
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    var emailError by remember { mutableStateOf("") }
+    var isEmailError by remember { mutableStateOf(false) }
+
+    fun validateEmail(email: String): Boolean {
+        return when {
+            email.isEmpty() -> {
+                emailError = "Email is required"
+                isEmailError = true
+                false
+            }
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                emailError = "Invalid email format"
+                isEmailError = true
+                false
+            }
+            else -> {
+                isEmailError = false
+                true
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(text = "Login", style = MaterialTheme.typography.h5)
+        Text(text = "Login", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = email,
-            onValueChange = onEmailChange,
-            label = { Text("Email") }
+            onValueChange = {
+                onEmailChange(it)
+                validateEmail(email)
+            },
+            label = { Text("Email")
+            },
+            singleLine = true,
+            isError = isEmailError,
+            supportingText = {
+                if(isEmailError) {
+                    Text(
+                        text = emailError,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            trailingIcon = {
+                if (isEmailError) {
+                    Icon(
+                        imageVector = Icons.Filled.Error,
+                        contentDescription = emailError,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = password,
             onValueChange = onPasswordChange,
-            label = { Text("Password") }
+            label = { Text("Password") },
+            singleLine = true,
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                val image = if (passwordVisible)
+                    Icons.Filled.Visibility
+                else Icons.Filled.VisibilityOff
+
+                val description = if (passwordVisible) "Hide password" else "Show password"
+
+                IconButton(onClick = {passwordVisible = !passwordVisible}){
+                    Icon(imageVector  = image, description)
+                }
+            }
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Forgot password?",
             modifier = Modifier.clickable { onForgotClick() },
-            style = MaterialTheme.typography.body1
+            style = MaterialTheme.typography.bodyMedium
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onLoginClick) {
@@ -130,7 +201,7 @@ fun LoginContent(
         Text(
             text = "Don't have an account? Register now",
             modifier = Modifier.clickable { onRegisterClick() },
-            style = MaterialTheme.typography.body1
+            style = MaterialTheme.typography.bodyMedium
         )
     }
 }
@@ -151,4 +222,80 @@ fun PreviewLoginContent() {
         onRegisterClick = {},
         authResultState = AuthResult.Idle
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewLoginFieldsWithErrors() {
+    var email by remember { mutableStateOf("test") }
+    var password by remember { mutableStateOf("123") }
+    var emailError by remember { mutableStateOf("Invalid email format") }
+    var passwordError by remember { mutableStateOf("Password must be at least 6 characters") }
+    var isEmailError by remember { mutableStateOf(true) }
+    var isPasswordError by remember { mutableStateOf(true) }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            isError = isEmailError,
+            supportingText = {
+                if (isEmailError) {
+                    Text(
+                        text = emailError,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            trailingIcon = {
+                if (isEmailError) {
+                    Icon(
+                        imageVector = Icons.Filled.Error,
+                        contentDescription = emailError,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            isError = isPasswordError,
+            supportingText = {
+                if (isPasswordError) {
+                    Text(
+                        text = passwordError,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            trailingIcon = {
+                if (isPasswordError) {
+                    Icon(
+                        imageVector = Icons.Filled.Error,
+                        contentDescription = passwordError,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                } else {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                        )
+                    }
+                }
+            },
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 }

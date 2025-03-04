@@ -6,82 +6,107 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.simbank.datamodels.UserAccount
 import com.example.simbank.repository.UserRepository
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.userProfileChangeRequest
+import com.google.firebase.FirebaseException
+import com.google.firebase.auth.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
+import kotlin.coroutines.cancellation.CancellationException
 
-/**
- * ViewModel for handling registration authentication.
- */
 class RegisterAuthViewModel : ViewModel() {
-
     private val firebaseAuth = FirebaseAuth.getInstance()
     private val userRepository = UserRepository()
-    private val TAG = "AuthViewModel"
+    private val TAG = "RegisterAuthViewModel"
 
-    // Expose registration state to the UI
     val authResultState = mutableStateOf<AuthResult>(AuthResult.Idle)
 
-    /**
-     * Initiates the registration process for the given user details.
-     *
-     * @param fullName The full name of the user.
-     * @param email The email address of the user.
-     * @param password The password of the user.
-     * @param confirmPassword The confirmation password entered by the user.
-     */
+    private val FIREBASE_TIMEOUT = 10000L // 10 seconds
+
     fun registerUser(fullName: String, email: String, password: String, confirmPassword: String) {
-        Log.d(TAG, "registerUser called with email: $email")
+        Log.d(TAG, "Registration attempt for email: $email")
 
-        // Basic validation
-        if (email.isBlank() || password.isBlank() || fullName.isBlank()) {
-            Log.e(TAG, "Validation failed: All fields are required.")
-            authResultState.value = AuthResult.Error("All fields are required.")
-            return
-        }
-        if (password != confirmPassword) {
-            Log.e(TAG, "Validation failed: Passwords do not match.")
-            authResultState.value = AuthResult.Error("Passwords do not match.")
+        if (!validateInput(fullName, email, password, confirmPassword)) {
             return
         }
 
-        // Show loading
         authResultState.value = AuthResult.Loading
-        Log.d(TAG, "Validation passed, starting Firebase registration.")
 
-        // Firebase createUserWithEmailAndPassword
-        firebaseAuth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val user = firebaseAuth.currentUser
-                    if(user != null) {
-                        val profileUpdates = userProfileChangeRequest {
-                            displayName = fullName
-                        }
-                        user.updateProfile(profileUpdates).addOnCompleteListener{
-                            if (it.isSuccessful) {
-                                Log.d(TAG, "User profile updated with name: $fullName")
-                            } else {
-                                Log.e(TAG, "Failed to update user profile: ${it.exception?.localizedMessage}")
+        viewModelScope.launch {
+            try {
+                withTimeout(FIREBASE_TIMEOUT) {
+                    // Create user account
+                    val authResult = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
+
+                    val user = authResult.user
+                    if (user != null) {
+                        try {
+                            // Update profile
+                            val profileUpdates = userProfileChangeRequest {
+                                displayName = fullName
                             }
-                        }
+                            user.updateProfile(profileUpdates).await()
 
-                        val newAccount = UserAccount(
-                            uid = user.uid,
-                            fullName = fullName,
-                            email = email)
-                        viewModelScope.launch {
+                            // Create user account in database
+                            val newAccount = UserAccount(
+                                uid = user.uid,
+                                fullName = fullName,
+                                email = email
+                            )
                             userRepository.createOrUpdateUserAccount(newAccount)
+
+                            Log.d(TAG, "Registration successful for email: $email")
+                            authResultState.value = AuthResult.Success
+                        } catch (e: Exception) {
+                            handleError("Failed to complete registration: ${e.localizedMessage}")
+                            // Cleanup on failure
+                            user.delete().await()
                         }
-                        Log.d(TAG, "Registration successful for email: $email")
+                    } else {
+                        handleError("User registration failed")
                     }
-                    authResultState.value = AuthResult.Success
-                } else {
-                    // Registration failed
-                    val errorMsg = task.exception?.localizedMessage ?: "Registration failed."
-                    Log.e(TAG, "Registration failed for email: $email, error: $errorMsg")
-                    authResultState.value = AuthResult.Error(errorMsg)
                 }
+            } catch (e: Exception) {
+                val errorMessage = when (e) {
+                    is FirebaseAuthWeakPasswordException -> "Password is too weak. Use at least 6 characters"
+                    is FirebaseAuthInvalidCredentialsException -> "Invalid email format"
+                    is FirebaseAuthUserCollisionException -> "Account already exists"
+                    is FirebaseException -> "Network error. Please check your connection"
+                    is CancellationException -> "Registration timed out"
+                    else -> e.localizedMessage ?: "Registration failed"
+                }
+                handleError(errorMessage)
             }
+        }
+    }
+
+    private fun validateInput(fullName: String, email: String, password: String, confirmPassword: String): Boolean {
+        when {
+            fullName.length < 2 -> {
+                handleError("Name must be at least 2 characters long")
+                return false
+            }
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                handleError("Invalid email format")
+                return false
+            }
+            password.length < 6 -> {
+                handleError("Password must be at least 6 characters long")
+                return false
+            }
+            password != confirmPassword -> {
+                handleError("Passwords do not match")
+                return false
+            }
+            else -> return true
+        }
+    }
+
+    private fun handleError(message: String) {
+        Log.e(TAG, message)
+        authResultState.value = AuthResult.Error(message)
+    }
+
+    fun resetState() {
+        authResultState.value = AuthResult.Idle
     }
 }

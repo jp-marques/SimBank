@@ -25,6 +25,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val sharedPref = this.getPreferences(Context.MODE_PRIVATE)
                 val loginAuthViewModel: LoginAuthViewModel = viewModel()
+                AppNavigation(navController = navController)
 
                 val isFirstLaunch = sharedPref.getBoolean("isFirstLaunch", true)
                 if (isFirstLaunch) {
@@ -49,7 +50,6 @@ class MainActivity : ComponentActivity() {
 
 
 
-                AppNavigation(navController)
             }
         }
     }

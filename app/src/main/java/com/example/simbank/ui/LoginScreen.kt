@@ -25,6 +25,8 @@ import androidx.navigation.NavController
 import com.example.simbank.navigation.Screen
 import com.example.simbank.viewmodel.AuthResult
 import com.example.simbank.viewmodel.LoginAuthViewModel
+import kotlinx.coroutines.delay
+
 
 /**
  * Composable function for the Login Screen.
@@ -109,28 +111,32 @@ fun LoginContent(
     authResultState: AuthResult
 ) {
 
+    var hasInteracted by remember { mutableStateOf(false) }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     var emailError by remember { mutableStateOf("") }
     var isEmailError by remember { mutableStateOf(false) }
 
-    fun validateEmail(email: String): Boolean {
-        return when {
-            email.isEmpty() -> {
-                emailError = "Email is required"
-                isEmailError = true
-                false
-            }
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
-                emailError = "Invalid email format"
-                isEmailError = true
-                false
-            }
-            else -> {
-                isEmailError = false
-                true
+    val emailValidator = remember { mutableStateOf("") }
+
+    LaunchedEffect(emailValidator.value) {
+        if (hasInteracted) {
+//            delay(500)
+            isEmailError = when {
+                emailValidator.value.isBlank() -> {
+                    emailError = "Please enter your email address"
+                    true
+                }
+
+                !android.util.Patterns.EMAIL_ADDRESS.matcher(emailValidator.value).matches() -> {
+                    emailError = "Enter a valid email"
+                    true
+                }
+
+                else -> false
             }
         }
     }
+
 
     Column(
         modifier = Modifier
@@ -143,7 +149,8 @@ fun LoginContent(
             value = email,
             onValueChange = {
                 onEmailChange(it)
-                validateEmail(email)
+                emailValidator.value = it
+                hasInteracted = true
             },
             label = { Text("Email")
             },
@@ -153,7 +160,8 @@ fun LoginContent(
                 if(isEmailError) {
                     Text(
                         text = emailError,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.error,
+                        maxLines = 1
                     )
                 }
             },
@@ -264,38 +272,38 @@ fun PreviewLoginFieldsWithErrors() {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            isError = isPasswordError,
-            supportingText = {
-                if (isPasswordError) {
-                    Text(
-                        text = passwordError,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            trailingIcon = {
-                if (isPasswordError) {
-                    Icon(
-                        imageVector = Icons.Filled.Error,
-                        contentDescription = passwordError,
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                } else {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
-                        )
-                    }
-                }
-            },
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
+//        OutlinedTextField(
+//            value = password,
+//            onValueChange = { password = it },
+//            label = { Text("Password") },
+//            isError = isPasswordError,
+//            supportingText = {
+//                if (isPasswordError) {
+//                    Text(
+//                        text = passwordError,
+//                        color = MaterialTheme.colorScheme.error
+//                    )
+//                }
+//            },
+//            trailingIcon = {
+//                if (isPasswordError) {
+//                    Icon(
+//                        imageVector = Icons.Filled.Error,
+//                        contentDescription = passwordError,
+//                        tint = MaterialTheme.colorScheme.error
+//                    )
+//                } else {
+//                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+//                        Icon(
+//                            imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+//                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
+//                        )
+//                    }
+//                }
+//            },
+//            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+//            singleLine = true,
+//            modifier = Modifier.fillMaxWidth()
+//        )
     }
 }

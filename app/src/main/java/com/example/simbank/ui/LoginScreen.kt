@@ -52,6 +52,7 @@ fun LoginScreen(
                 Log.d(TAG, "Login successful, navigating to Home screen.")
                 navController.navigate(Screen.Home.route) {
                     popUpTo(Screen.Login.route) { inclusive = true }
+                    launchSingleTop = true
                 }
             }
         }
@@ -155,6 +156,7 @@ fun LoginContent(
             label = { Text("Email")
             },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             isError = isEmailError,
             supportingText = {
                 if(isEmailError) {

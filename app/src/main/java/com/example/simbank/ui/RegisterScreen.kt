@@ -49,9 +49,7 @@ fun RegisterScreen(
             LaunchedEffect(Unit) {
                 Log.d(TAG, "Registration successful, navigating to SendCode screen.")
                 registerAuthViewModel.resetState()
-                navController.navigate(Screen.SendCode.route) {
-                    popUpTo(Screen.Register.route) { inclusive = true }
-                }
+                navController.navigate(Screen.VerifyPhone.route)
             }
         }
         is AuthResult.Error -> {

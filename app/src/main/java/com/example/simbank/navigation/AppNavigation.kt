@@ -16,7 +16,7 @@ fun AppNavigation(navController: NavHostController) {
         composable(Screen.Home.route) { HomeScreen(navController) }
         composable(Screen.Deposit.route) { DepositScreen(navController) }
         composable(Screen.SendMoney.route) { PaymentScreen(navController) }
-        composable(Screen.SendCode.route) { SendCodeScreen(navController) }
+        composable(Screen.VerifyPhone.route) { VerifyPhoneScreen(navController) }
         composable(Screen.ForgotPass.route) { ForgotPasswordScreen(navController) }
         composable(Screen.AccountPage.route) { AccountPageScreen(navController) }
     }

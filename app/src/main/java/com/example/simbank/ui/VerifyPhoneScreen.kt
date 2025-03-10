@@ -1,6 +1,7 @@
 package com.example.simbank.ui
 
 import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -12,8 +13,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.simbank.navigation.Screen
 import com.example.simbank.utils.PhoneNumberVisualTransformation
 import com.example.simbank.viewmodel.PhoneVerifyAuthViewModel
@@ -21,7 +24,9 @@ import com.example.simbank.viewmodel.PhoneVerifyAuthViewModel
 @Composable
 fun VerifyPhoneScreen(
     navController: NavController,
-    phoneVerifyAuthViewModel: PhoneVerifyAuthViewModel = viewModel()
+    phoneVerifyAuthViewModel: PhoneVerifyAuthViewModel = hiltViewModel(
+        navController.getBackStackEntry("auth")
+    )
 ) {
     var phoneNumber by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -41,7 +46,7 @@ fun VerifyPhoneScreen(
                 }
             },
             onSendCodeClick = {
-//                phoneVerifyAuthViewModel.requestCode(phoneNumber)
+                phoneVerifyAuthViewModel.requestCode(phoneNumber)
                 navController.navigate(Screen.OtpRegister.route)
             }
         )

@@ -64,7 +64,10 @@ class UserRepository {
      *
      * @param account The UserAccount object containing the account data.
      */
-    suspend fun createOrUpdateUserAccount(account: UserAccount) {
+    suspend fun createOrUpdateUserAccount(account: UserAccount?) {
+        if (account == null) {
+            throw IllegalArgumentException("Account cannot be null")
+        }
         val uid = auth.currentUser?.uid ?: return
         db.collection("users").document(uid).set(account).await()
     }

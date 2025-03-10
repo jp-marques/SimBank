@@ -37,3 +37,11 @@ data class TransactionResult(
     val success: Boolean,
     val errorMessage: String? = null
 )
+
+// TODO: Add temporary storage for registration data that will be combined with phone verification to make efficient database writes
+data class UserRegistrationData(
+    val fullName: String,
+    val email: String,
+    val uid: String,
+    // Additional fields as needed for the complete user profile
+)

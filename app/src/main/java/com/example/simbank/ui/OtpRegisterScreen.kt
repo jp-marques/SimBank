@@ -1,6 +1,7 @@
 package com.example.simbank.ui
 
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -12,16 +13,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.simbank.navigation.Screen
 import com.example.simbank.viewmodel.PhoneVerifyAuthViewModel
 
 @Composable
 fun OtpRegisterScreen(
     navController: NavController,
-    phoneVerifyAuthViewModel: PhoneVerifyAuthViewModel = viewModel()
+    phoneVerifyAuthViewModel: PhoneVerifyAuthViewModel = hiltViewModel(
+        navController.getBackStackEntry("auth")
+    )
 ) {
+
     var otp by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isError by remember { mutableStateOf(false) }
@@ -41,7 +47,7 @@ fun OtpRegisterScreen(
                 }
             },
             onVerifyClick = {
-//                phoneVerifyAuthViewModel.verifyCode(otp)
+                phoneVerifyAuthViewModel.verifyCode(otp)
                 navController.navigate(Screen.Home.route) {
                     popUpTo(Screen.OtpRegister.route) { inclusive = true }
                     launchSingleTop = true

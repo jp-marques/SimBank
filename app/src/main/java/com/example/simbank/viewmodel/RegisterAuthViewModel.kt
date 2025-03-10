@@ -13,11 +13,13 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
 import kotlin.coroutines.cancellation.CancellationException
 
+// TODO: Implement temporary storage mechanism for registration data
 class RegisterAuthViewModel : ViewModel() {
     private val firebaseAuth = FirebaseAuth.getInstance()
     private val userRepository = UserRepository()
     private val TAG = "RegisterAuthViewModel"
 
+    // TODO: Add state for caching registration data during the flow
     val authResultState = mutableStateOf<AuthResult>(AuthResult.Idle)
 
     private val FIREBASE_TIMEOUT = 10000L // 10 seconds
@@ -35,7 +37,8 @@ class RegisterAuthViewModel : ViewModel() {
             try {
                 withTimeout(FIREBASE_TIMEOUT) {
                     // Create user account
-                    val authResult = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
+                    val authResult =
+                        firebaseAuth.createUserWithEmailAndPassword(email, password).await()
 
                     val user = authResult.user
                     if (user != null) {
@@ -45,7 +48,7 @@ class RegisterAuthViewModel : ViewModel() {
                                 displayName = fullName
                             }
                             user.updateProfile(profileUpdates).await()
-
+                            // TODO: Cache registration data here instead of writing to Firestore
                             // Create user account in database
                             val newAccount = UserAccount(
                                 uid = user.uid,
@@ -79,24 +82,33 @@ class RegisterAuthViewModel : ViewModel() {
         }
     }
 
-    private fun validateInput(fullName: String, email: String, password: String, confirmPassword: String): Boolean {
+    private fun validateInput(
+        fullName: String,
+        email: String,
+        password: String,
+        confirmPassword: String
+    ): Boolean {
         when {
             fullName.length < 2 -> {
                 handleError("Name must be at least 2 characters long")
                 return false
             }
+
             !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
                 handleError("Invalid email format")
                 return false
             }
+
             password.length < 6 -> {
                 handleError("Password must be at least 6 characters long")
                 return false
             }
+
             password != confirmPassword -> {
                 handleError("Passwords do not match")
                 return false
             }
+
             else -> return true
         }
     }
@@ -108,5 +120,6 @@ class RegisterAuthViewModel : ViewModel() {
 
     fun resetState() {
         authResultState.value = AuthResult.Idle
+        // TODO: Clear cached registration data when resetting state
     }
 }

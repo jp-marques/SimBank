@@ -27,7 +27,9 @@ class MainActivity : ComponentActivity() {
                 val loginAuthViewModel: LoginAuthViewModel = viewModel()
                 AppNavigation(navController = navController)
 
-                val isFirstLaunch = sharedPref.getBoolean("isFirstLaunch", true)
+//                val isFirstLaunch = sharedPref.getBoolean("isFirstLaunch", true)
+                // hardcode to true for testing
+                val isFirstLaunch = true
                 if (isFirstLaunch) {
                     navController.navigate(Screen.Welcome.route) {
                         popUpTo(0) { inclusive = true }
